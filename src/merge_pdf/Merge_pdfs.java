@@ -3,57 +3,57 @@ package merge_pdf;
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.Comparator;
 
-import org.apache.pdfbox.io.MemoryUsageSetting;
 import org.apache.pdfbox.multipdf.PDFMergerUtility;
+import org.apache.pdfbox.io.RandomAccessStreamCacheImpl;
 
 public class Merge_pdfs
 {
-	public static void main(String[] args)
-	{	
-		Ejecutar();
-	}
+    public static void main(String[] args)
+    {
+        Ejecutar();
+    }
 
-	static void Ejecutar()
-	{
-		String INPUT_PATH = System.getProperty("user.dir") + "\\pdf_In";
-	    String OUTPUT_PATH = System.getProperty("user.dir") + "\\pdf_Out";
-		
-		//Loading existing documents
-	    File dir = new File(INPUT_PATH);
-	    File[] directoryListing = dir.listFiles();
-	    Comparator<File> c1 = new FileNameComparator();
-	    Arrays.sort(directoryListing, c1);
-	    
-	    if (directoryListing != null)
-	    {
-	    	PDFMergerUtility pdfMerger = new PDFMergerUtility();
-			pdfMerger.setDestinationFileName(OUTPUT_PATH+"\\Out.pdf");
-            for (File child : directoryListing)
+    static void Ejecutar()
+    {
+        String INPUT_PATH = System.getProperty("user.dir") + "\\pdf_In";
+        String OUTPUT_PATH = System.getProperty("user.dir") + "\\pdf_Out";
+
+        File dir = new File(INPUT_PATH);
+        File[] files = dir.listFiles();
+        if (files == null) return;
+
+        Arrays.sort(files, (a, b) -> a.getName().compareToIgnoreCase(b.getName()));
+
+        PDFMergerUtility pdfMerger = new PDFMergerUtility();
+        pdfMerger.setDestinationFileName(OUTPUT_PATH + "\\Out.pdf");
+
+        for (File f : files)
+        {
+            if (f.getName().endsWith(".pdf"))
             {
-            	String name = child.getName();
-            	if (name.endsWith(".pdf"))
-            	{
-					try
-					{
-						pdfMerger.addSource(INPUT_PATH+"\\"+name);
-					}
-					catch (IOException e)
-					{
-						e.printStackTrace();
-					}
-            	}
+                try
+                {
+                    pdfMerger.addSource(f);
+                }
+                catch (IOException e)
+                {
+                    e.printStackTrace();
+                }
             }
-            try
-			{
-				pdfMerger.mergeDocuments(MemoryUsageSetting.setupMainMemoryOnly());
-			} catch (IOException e)
-			{
-				e.printStackTrace();
-			}
-	    }
-	}
+        }
 
-
+        try
+        {
+            pdfMerger.mergeDocuments(
+                () -> {
+                    return new RandomAccessStreamCacheImpl();
+                }
+            );
+        }
+        catch (IOException e)
+        {
+            e.printStackTrace();
+        }
+    }
 }
